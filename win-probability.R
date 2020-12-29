@@ -17,6 +17,16 @@ library(scales)
 # Don't display numbers in scientific notation
 options(scipen = 9999)
 
+# Colors
+dayglo_orange = "#ff6700"
+light_blue = "#0098ff"
+red = "#ff0000"
+grey = "#808080"
+kiwi_green = "#8ee53f"
+dark_olive_green = "#556b2f"
+dark_raspberry = "#872657"
+rich_black = "#010203"
+
 load_data <- function(start_year, end_year) {
   # For each year, build stats.
   data <- data.frame()
@@ -69,14 +79,15 @@ pbp_reduced = pbp_final %>%
     # yrdline100
     score_differential,
     # ScoreDiff
-    poswins
+    poswins,
+    wp
   )
 
 # Sample 80% of rows
 set.seed(123)
 indexes = sample(1:nrow(pbp_reduced), round(nrow(pbp_reduced) * 0.8), replace =
                    FALSE)
-train <- pbp_reduced[indexes,]
+train <- pbp_reduced[indexes, ]
 
 model1 = glm(
   poswins ~ qtr + down + ydstogo + game_seconds_remaining + yardline_100 + score_differential,
@@ -95,14 +106,17 @@ plot <- ggplot(
   aes(x = game_seconds_remaining, y = pred1h)
 ) +
   geom_hline(yintercept = 0.5, color = "white") +
+  geom_line(aes(y = wp), color = dayglo_orange) +
   geom_line(size = 2, colour = "white") +
   scale_x_reverse() +
   scale_y_continuous(labels = percent, limits = c(0, 1)) +
-  theme_high_contrast(base_family = "InputMono") +
+  theme_high_contrast(base_family = "InputMono", background_color=rich_black) +
   labs(
     title = "Carolina at Denver, 2016 Week 1",
-    subtitle = "Win probability",
+    subtitle = "Custom win probability (white) and nflfastR (orange)",
     caption = "Data from nflfastR",
     x = "Time Remaining (seconds)",
     y = "Home Win Probability"
   )
+
+ggsave("wp.png", plot = plot)
