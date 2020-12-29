@@ -1,89 +1,108 @@
-#Install nflscrapR
-library(devtools)
-devtools::install_github(repo = "maksimhorowitz/nflscrapR")
-devtools::install_github("dgrtwo/gganimate")
-#Load libraries
-library(nflscrapR)
+# Prerequisite:
+#
+# Download data files in the terminal.
+#
+#   for i in {2009..2016};
+#     do curl -O https://raw.githubusercontent.com/guga31bb/nflfastR-data/master/data/play_by_play_$i.rds;
+#   done
+
+# Load libraries
+# install.packages("nflfastR")
+library(nflfastR)
 library(tidyverse)
-library(caTools)
+library(gghighcontrast)
+library(scales)
+# library(caTools)
 
-# TODO: For each year
-pbp1 = season_play_by_play(2016)
-saveRDS(pbp1, "pbp_data_2016.rds")
+# Don't display numbers in scientific notation
+options(scipen = 9999)
 
-# Combine years
-pbp = bind_rows(pbp1, pbp2, pbp3, pbp4, pbp5, pbp6, pbp7, pbp8)
-saveRDS(pbp, "pbp_data.rds")
+load_data <- function(start_year, end_year) {
+  # For each year, build stats.
+  data <- data.frame()
+  for (year in seq(start_year, end_year, by = 1)) {
+    pbp_single_year <-
+      readRDS(str_interp('data/play_by_play_${year}.rds'))
+    data <- bind_rows(data, pbp_single_year)
+  }
+  return(data)
+}
 
-# TODO: For each year
-games2016 = season_games(Season = 2016)
+# TODO: Load 2009 through 2016 or maybe all the way to 2019
+pbp_final <- load_data(2009, 2016) %>%
+  mutate(
+    winner = if_else(
+      home_score > away_score,
+      home_team,
+      if_else(home_score < away_score, away_team, "TIE")
+    ),
+    poswins = ifelse(winner == posteam, "Yes", "No")
+  ) %>%
+  filter(winner != "TIE")
 
-# Combine years
-games = bind_rows(
-  games2016,
-  games2015,
-  games2014,
-  games2013,
-  games2012,
-  games2011,
-  games2010,
-  games2009
-)
-saveRDS(games, "games_data.rds")
-
-# Join PBP with game outcomes
-pbp_final = full_join(games, pbp_raw, by = "GameID")
-saveRDS(pbp_final, "pbp_final.rds")
-
-# Create fields to show if team won or lost
-pbp_final = pbp_final %>% mutate(winner = ifelse(homescore > awayscore, home, away))
-pbp_final = pbp_final %>% mutate(poswins = ifelse(winner == posteam, "Yes", "No"))
 pbp_final$qtr = as.factor(pbp_final$qtr)
 pbp_final$down = as.factor(pbp_final$down)
 pbp_final$poswins = as.factor(pbp_final$poswins)
 
 
 pbp_reduced = pbp_final %>%
-  filter(PlayType != "No Play" &
+  filter(play_type != "No Play" &
            qtr != 5 &
+           qtr != 6 &
            down != "NA" &
            poswins != "NA") %>%
   select(
-    GameID,
-    Date,
+    game_id,
+    # GameID
+    game_date,
+    # Date
     posteam,
-    HomeTeam,
-    AwayTeam,
+    home_team,
+    away_team,
     winner,
     qtr,
     down,
     ydstogo,
-    TimeSecs,
-    yrdline100,
-    ScoreDiff,
+    game_seconds_remaining,
+    # TimeSecs
+    yardline_100,
+    # yrdline100
+    score_differential,
+    # ScoreDiff
     poswins
   )
 
+# Sample 80% of rows
 set.seed(123)
-split = sample.split(pbp_reduced$poswins, SplitRatio = 0.8)
-train = pbp_reduced %>% filter(split == TRUE)
-test = pbp_reduced %>% filter(split == FALSE)
+indexes = sample(1:nrow(pbp_reduced), round(nrow(pbp_reduced) * 0.8), replace =
+                   FALSE)
+train <- pbp_reduced[indexes,]
 
-model1 = glm(poswins ~ qtr + down + ydstogo + TimeSecs + yrdline100 + ScoreDiff,
-             train,
-             family = "binomial")
+model1 = glm(
+  poswins ~ qtr + down + ydstogo + game_seconds_remaining + yardline_100 + score_differential,
+  train,
+  family = "binomial"
+)
 summary(model1)
 
 pred1 = predict(model1, train, type = "response")
 train = cbind(train, pred1)
-train = mutate(train, pred1h = ifelse(posteam == HomeTeam, pred1, 1 - pred1))
+train = mutate(train, pred1h = ifelse(posteam == home_team, pred1, 1 - pred1))
 
 
-ggplot(filter(train, GameID == "2016090800"),
-       aes(x = TimeSecs, y = pred1h)) +
-  geom_line(size = 2, colour = "orange") +
+plot <- ggplot(
+  filter(train, game_id == "2016_01_CAR_DEN"),
+  aes(x = game_seconds_remaining, y = pred1h)
+) +
+  geom_hline(yintercept = 0.5, color = "white") +
+  geom_line(size = 2, colour = "white") +
   scale_x_reverse() +
-  ylim(c(0, 1)) +
-  theme_minimal() +
-  xlab("Time Remaining (seconds)") +
-  ylab("Home Win Probability")
+  scale_y_continuous(labels = percent, limits = c(0, 1)) +
+  theme_high_contrast(base_family = "InputMono") +
+  labs(
+    title = "Carolina at Denver, 2016 Week 1",
+    subtitle = "Win probability",
+    caption = "Data from nflfastR",
+    x = "Time Remaining (seconds)",
+    y = "Home Win Probability"
+  )
