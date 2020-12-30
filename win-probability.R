@@ -26,10 +26,22 @@ dark_olive_green = "#556b2f"
 dark_raspberry = "#872657"
 rich_black = "#010203"
 
+
 load_data <- function(start_year, end_year) {
-  # For each year, build stats.
+  if (!dir.exists("data")) {
+    dir.create("data")
+  }
+
+  # For each year, load data
   data <- data.frame()
   for (year in seq(start_year, end_year, by = 1)) {
+    # Download file to cache if not present
+    url = str_interp("https://raw.githubusercontent.com/guga31bb/nflfastR-data/master/data/play_by_play_${year}.rds")
+    local_filename = str_interp("data/play_by_play_${year}.rds")
+    if (!file.exists(local_filename)) {
+      download.file(url, local_filename)
+    }
+
     pbp_single_year <-
       readRDS(str_interp('data/play_by_play_${year}.rds'))
     data <- bind_rows(data, pbp_single_year)
