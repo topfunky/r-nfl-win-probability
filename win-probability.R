@@ -12,6 +12,7 @@ library(nflfastR)
 library(tidyverse)
 library(gghighcontrast)
 library(scales)
+library(ggimage)
 
 # Don't display numbers in scientific notation
 options(scipen = 9999)
@@ -26,6 +27,7 @@ dark_olive_green = "#556b2f"
 dark_raspberry = "#872657"
 rich_black = "#010203"
 
+logos <- teams_colors_logos %>% select(team_abbr, team_logo_espn)
 
 load_data <- function(start_year, end_year) {
   if (!dir.exists("data")) {
@@ -46,6 +48,8 @@ load_data <- function(start_year, end_year) {
       readRDS(str_interp('data/play_by_play_${year}.rds'))
     data <- bind_rows(data, pbp_single_year)
   }
+
+  data <- data %>% inner_join(logos, by = c("posteam" = "team_abbr"))
   return(data)
 }
 
@@ -101,7 +105,8 @@ pbp_reduced = pbp_final %>%
     posteam_timeouts_remaining,
     scoring_play,
     poswins,
-    wp
+    wp,
+    team_logo_espn
   )
 
 # Sample 80% of rows
@@ -142,14 +147,24 @@ plot_for_game_id <- function(single_game_id) {
   background_color = "white"
   pbp_single_game <- filter(pbp_reduced, game_id == single_game_id)
 
-  # TODO: Get home_team and away_team and annotate on chart
+  # Get home_team and away_team and annotate on chart
   home_team_name <- pbp_single_game[1,]$home_team
+  home_team_logo_url <- logos %>% filter(team_abbr == home_team_name)
+
   away_team_name <- pbp_single_game[1,]$away_team
+  away_team_logo_url <- logos %>% filter(team_abbr == away_team_name)
+
+  logo_placement_data <- data.frame(
+    x = c(3600, 3600),
+    y = c(0.95, 0.05),
+    team_logo_espn = c(home_team_logo_url$team_logo_espn, away_team_logo_url$team_logo_espn),
+    stringsAsFactors = FALSE
+  )
 
   plot <- ggplot(pbp_single_game,
                  aes(x = game_seconds_remaining, y = pred1h)) +
     # 50% reference
-    geom_hline(yintercept = 0.5, color = foreground_color) +
+    geom_hline(yintercept = 0.5, color = grey, size=1) +
     # Quarters
     geom_vline(xintercept = 900, color = grey) +
     geom_vline(xintercept = 1800, color = grey) +
@@ -167,8 +182,10 @@ plot_for_game_id <- function(single_game_id) {
     ) +
 
     # Annotate with team names
-    annotate("text", x=3600, y=0.95, color=foreground_color, family="InputMono", label=home_team_name) +
-    annotate("text", x=3600, y=0.05, color=foreground_color, family="InputMono", label=away_team_name) +
+    # annotate("text", x=3600, y=0.95, color=foreground_color, family="InputMono", label=home_team_name) +
+    # annotate("text", x=3600, y=0.05, color=foreground_color, family="InputMono", label=away_team_name) +
+
+    geom_image(data=logo_placement_data, aes(x=x, y=y, image = team_logo_espn), size = 0.05, asp = 16 / 9) +
 
     # Formatting
     scale_x_reverse() +
