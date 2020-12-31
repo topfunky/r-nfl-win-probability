@@ -14,6 +14,12 @@ Uses logistic regression to model wins at each point of the game based on the sc
 
 The chart displays the output of the model (black), the built-in nflfastR win probability model (blue), scoring events (lines at bottom), and other reference lines (50% probability, times of quarters, etc.).
 
+The nflfastR is more accurate because it also uses:
+
+- Expected points
+- Home field advantage
+- Other attributes
+
 ## Reference
 
 Data from:
