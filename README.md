@@ -6,7 +6,7 @@ Inspired by a [win probability model article](https://medium.com/@technocat79/bu
 
 ## Description
 
-Uses logistic regression to model wins at each point of the game based on the score, field position, distance to the first down, time remaining, etc.
+Uses logistic regression to model wins at each point of the game based on the score, field position, home field advantage, distance to the first down, time remaining, etc.
 
 ## Chart
 
@@ -17,7 +17,6 @@ The chart displays the output of the model (black), the built-in nflfastR win pr
 The nflfastR is more accurate because it also uses:
 
 - Expected points
-- Home field advantage
 - Other attributes
 
 ## Reference
