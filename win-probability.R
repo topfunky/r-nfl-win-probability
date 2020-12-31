@@ -143,10 +143,10 @@ load_data_and_train_model <- function(start_year, end_year) {
 
   pbp <- pbp %>%
     mutate(
-      pred1h =
+      home_wp_custom =
         predict(win_prediction_model, pbp[row_number(),], type = "response"),
       # Recalculate win probabilities relative to home team
-      pred1h = ifelse(posteam == home_team, pred1h, 1 - pred1h),
+      home_wp_custom = ifelse(posteam == home_team, home_wp_custom, 1 - home_wp_custom),
     )
   return(pbp)
 }
@@ -171,7 +171,7 @@ plot_for_game_id <- function(data, single_game_id) {
   ) %>% inner_join(logos, by = "team_abbr")
 
   plot <- ggplot(pbp_single_game,
-                 aes(x = game_seconds_remaining, y = pred1h)) +
+                 aes(x = game_seconds_remaining, y = home_wp_custom)) +
     # 50% reference line
     geom_hline(yintercept = 0.5,
                color = grey,
