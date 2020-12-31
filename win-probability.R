@@ -24,7 +24,7 @@ if (!dir.exists("data")) {
   dir.create("data")
 }
 
-load_data <- function(start_year, end_year) {
+load_data <- function(start_year, end_year, logos) {
   # For each year, load data
   data <- data.frame()
   for (year in seq(start_year, end_year, by = 1)) {
@@ -64,33 +64,8 @@ load_logos <- function() {
   return(logos)
 }
 
-build_win_prediction_model <- function(data) {
-  # Sample 80% of rows
-  set.seed(123)
-  indexes = sample(1:nrow(data),
-                   round(nrow(data) * 0.8),
-                   replace = FALSE)
-  train <- data[indexes,]
-
-  win_prediction_model = glm(
-    poswins ~
-      qtr +
-      down +
-      ydstogo +
-      half_seconds_remaining +
-      game_seconds_remaining +
-      yardline_100 +
-      score_differential +
-      defteam_timeouts_remaining +
-      posteam_timeouts_remaining,
-    train,
-    family = "binomial"
-  )
-  return(win_prediction_model)
-}
-
-load_data_and_train_model <- function(start_year, end_year) {
-  pbp <- load_data(start_year, end_year) %>%
+load_data_and_train_model <- function(start_year, end_year, logos) {
+  pbp <- load_data(start_year, end_year, logos) %>%
     filter(
       !is.na(score_differential),
       !is.na(play_type),
@@ -108,6 +83,7 @@ load_data_and_train_model <- function(start_year, end_year) {
       ),
       # Record winner on each row
       poswins = ifelse(winner == posteam, 1, 0),
+      is_home_team = ifelse(posteam == home_team, 1, 0),
       # Build a field with all scoring plays for display on chart
       scoring_play = ifelse(
         play_type == "extra_point" |
@@ -136,6 +112,7 @@ load_data_and_train_model <- function(start_year, end_year) {
       posteam_timeouts_remaining,
       scoring_play,
       home_wp,
+      is_home_team,
       team_logo_local
     )
 
@@ -151,16 +128,42 @@ load_data_and_train_model <- function(start_year, end_year) {
   return(pbp)
 }
 
+build_win_prediction_model <- function(data) {
+  # Sample 80% of rows
+  set.seed(123)
+  indexes = sample(1:nrow(data),
+                   round(nrow(data) * 0.8),
+                   replace = FALSE)
+  train <- data[indexes,]
+
+  win_prediction_model = glm(
+    poswins ~
+      qtr +
+      down +
+      ydstogo +
+      half_seconds_remaining +
+      game_seconds_remaining +
+      yardline_100 +
+      score_differential +
+      defteam_timeouts_remaining +
+      posteam_timeouts_remaining +
+      is_home_team,
+    train,
+    family = "binomial"
+  )
+  return(win_prediction_model)
+}
+
 # Plot
-plot_for_game_id <- function(data, single_game_id) {
+plot_for_data <- function(data, logos) {
   foreground_color = rich_black
   background_color = "white"
 
-  pbp_single_game <- filter(data, game_id == single_game_id)
+  single_game_id <- data[1,]$game_id
 
   # Get home_team and away_team and annotate on chart
-  home_team_abbr <- pbp_single_game[1,]$home_team
-  away_team_abbr <- pbp_single_game[1,]$away_team
+  home_team_abbr <- data[1,]$home_team
+  away_team_abbr <- data[1,]$away_team
 
   # Build a data frame with coordinates of team logo to place on chart
   logo_placement_data <- data.frame(
@@ -170,7 +173,7 @@ plot_for_game_id <- function(data, single_game_id) {
     stringsAsFactors = FALSE
   ) %>% inner_join(logos, by = "team_abbr")
 
-  plot <- ggplot(pbp_single_game,
+  plot <- ggplot(data,
                  aes(x = game_seconds_remaining, y = home_wp_custom)) +
     # 50% reference line
     geom_hline(yintercept = 0.5,
@@ -189,11 +192,11 @@ plot_for_game_id <- function(data, single_game_id) {
 
     # Win Probability
     geom_line(aes(y = home_wp), color = light_blue) +
-    geom_line(size = 2, color = foreground_color) +
+    geom_line(size = 1, color = foreground_color) +
 
     # Scoring events
     geom_rug(
-      data = filter(pbp_single_game, scoring_play == 1),
+      data = filter(data, scoring_play == 1),
       color = foreground_color,
       sides = "b"
     ) +
@@ -227,21 +230,21 @@ plot_for_game_id <- function(data, single_game_id) {
 
 # Load 2009 through 2016 or maybe all the way to 2019
 logos <- load_logos()
-pbp_data <- load_data_and_train_model(2009, 2020)
+pbp_data <- load_data_and_train_model(2009, 2020, logos)
 
 # Plot a few games
 game_ids <- c(
-  "2019_10_SEA_SF",
-  "2019_17_SF_SEA",
-  "2016_01_CAR_DEN",
-  "2020_16_MIA_LV",
+  # "2019_10_SEA_SF",
+  # "2019_17_SF_SEA",
+  # "2016_01_CAR_DEN",
+  # "2020_16_MIA_LV",
   "2020_16_LA_SEA",
   "2020_16_TB_DET")
-for (game_id in game_ids) {
-  plot <- plot_for_game_id(pbp_data, game_id)
+for (single_game_id in game_ids) {
+  plot <- plot_for_data(filter(pbp_data, game_id == single_game_id), logos)
 
   ggsave(
-    str_interp("wp-${game_id}.png"),
+    str_interp("wp-${single_game_id}.png"),
     plot = plot,
     width = 9,
     height = 6
