@@ -167,6 +167,10 @@ plot_for_data <- function(data, logos) {
 
   single_game_id <- data[1, ]$game_id
 
+  game_title_pieces <- strsplit(single_game_id, "_")[[1]]
+  game_year <- game_title_pieces[1]
+  game_week <- game_title_pieces[2]
+
   # Get home_team and away_team and annotate on chart
   home_team_abbr <- data[1, ]$home_team
   away_team_abbr <- data[1, ]$away_team
@@ -261,7 +265,7 @@ plot_for_data <- function(data, logos) {
     theme(axis.text.x = element_blank(),
           axis.ticks.x = element_blank()) +
     labs(
-      title = str_interp("${single_game_id}"),
+      title = str_interp("${game_year} Week ${game_week}: ${away_team_abbr} at ${home_team_abbr}"),
       subtitle = "Custom win probability model compared to nflfastR WP (blue)",
       caption = "Data from nflfastR",
       x = "Quarters",
