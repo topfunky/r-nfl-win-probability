@@ -21,6 +21,6 @@ The nflfastR is more accurate because it also uses:
 
 ## Reference
 
-Data from:
-
-- [nflfastR](https://www.nflfastr.com/index.html)
+- [nflfastR package](https://www.nflfastr.com/index.html)
+- [Description of nflfastR approach](https://www.opensourcefootball.com/posts/2020-09-28-nflfastr-ep-wp-and-cp-models/)
+- [Earlier article about using nflscrapR for a win probability model](https://medium.com/@technocat79/building-a-basic-in-game-win-probability-model-for-the-nfl-54600e57fe1c)
