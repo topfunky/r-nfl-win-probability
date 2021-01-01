@@ -162,6 +162,9 @@ build_win_prediction_model <- function(data) {
 
 # Plot
 plot_for_data <- function(data, logos) {
+  # NOTE: Doesn't work well with facet_wrap()...need to specify
+  # team logos more dynamically based on the data being charted.
+
   foreground_color = rich_black
   background_color = "white"
 
@@ -197,40 +200,44 @@ plot_for_data <- function(data, logos) {
 
     annotate(
       "text",
-      x = 58.75 * 60,
-      y = 0.98,
+      x = 58 * 60,
+      y = 0.95,
       label = "Q1",
       family = "InputMono",
-      color = grey
+      color = grey,
+      size = 2
     ) +
     annotate(
       "text",
-      x = 43.75 * 60,
-      y = 0.98,
+      x = 43 * 60,
+      y = 0.95,
       label = "Q2",
       family = "InputMono",
-      color = grey
+      color = grey,
+      size = 2
     ) +
     annotate(
       "text",
-      x = 28.75 * 60,
-      y = 0.98,
+      x = 28 * 60,
+      y = 0.95,
       label = "Q3",
       family = "InputMono",
-      color = grey
+      color = grey,
+      size = 2
     ) +
     annotate(
       "text",
-      x = 13.75 * 60,
-      y = 0.98,
+      x = 13 * 60,
+      y = 0.95,
       label = "Q4",
       family = "InputMono",
-      color = grey
+      color = grey,
+      size = 2
     ) +
 
     # Win Probability
     geom_line(aes(y = home_wp), color = light_blue) +
-    geom_line(size = 1, color = foreground_color) +
+    geom_line(size = 0.8) +
 
     # Scoring events
     geom_rug(
@@ -291,7 +298,7 @@ for (single_game_id in game_ids) {
   ggsave(
     str_interp("wp-${single_game_id}.png"),
     plot = plot,
-    width = 9,
-    height = 6
+    width = 6,
+    height = 4
   )
 }
