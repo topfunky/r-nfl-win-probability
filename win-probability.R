@@ -57,7 +57,8 @@ cache_logo_image <- function(logo) {
 }
 
 load_logos <- function() {
-  logos <- teams_colors_logos %>%
+  logos <- teams_colors_logos
+  logos <- logos %>%
     select(team_abbr, team_logo_espn) %>%
     mutate(team_logo_local = apply(logos, 1, cache_logo_image))
 
