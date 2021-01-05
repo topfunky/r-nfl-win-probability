@@ -117,7 +117,7 @@ load_data_and_train_model <- function(start_year, end_year, logos) {
       posteam_timeouts_remaining,
       home_scoring_play,
       away_scoring_play,
-      home_wp,
+      home_wp_post,
       is_home_team,
       team_logo_local
     )
@@ -273,7 +273,7 @@ plot_for_data <- function(data, logos) {
           axis.ticks.x = element_blank()) +
     labs(
       title = str_interp("${game_year} Week ${game_week}: ${away_team_abbr} at ${home_team_abbr}"),
-      subtitle = "Custom win probability model compared to nflfastR WP (blue)",
+      subtitle = "Custom win probability model compared to nflfastR WP (grey)",
       caption = "Data from nflfastR",
       x = "Quarters",
       y = "Home Win Probability"
