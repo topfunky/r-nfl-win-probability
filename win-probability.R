@@ -236,7 +236,7 @@ plot_for_data <- function(data, logos) {
     ) +
 
     # Win Probability
-    geom_line(aes(y = home_wp), color = light_blue) +
+    geom_line(aes(y = home_wp_post), color = grey) +
     geom_line(size = 0.8) +
 
     # Scoring events
