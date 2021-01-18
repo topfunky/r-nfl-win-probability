@@ -19,6 +19,10 @@ The nflfastR is more accurate because it also uses:
 - Expected points
 - Other attributes
 
+My accuracy:
+
+![In Game Win Probability](out/accuracy.png)
+
 ## Reference
 
 - [nflfastR package](https://www.nflfastr.com/index.html)
